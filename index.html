@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ZA Tanks Online</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #222; }
+    canvas { display: block; background: #333; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const tankSize = 40;
+    const bulletSize = 5;
+    const tankSpeed = 3;
+    const bulletSpeed = 7;
+
+    const tank1 = {
+      x: 100,
+      y: 100,
+      color: "lime",
+      keys: { left: "a", right: "d", up: "w", down: "s", shoot: " " },
+      dx: 0,
+      dy: 0,
+      bullets: []
+    };
+
+    const tank2 = {
+      x: canvas.width - 140,
+      y: canvas.height - 140,
+      color: "red",
+      keys: { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", shoot: "/" },
+      dx: 0,
+      dy: 0,
+      bullets: []
+    };
+
+    const keysPressed = {};
+    window.addEventListener("keydown", (e) => keysPressed[e.key] = true);
+    window.addEventListener("keyup", (e) => keysPressed[e.key] = false);
+
+    function updateTank(tank) {
+      tank.dx = 0;
+      tank.dy = 0;
+      if (keysPressed[tank.keys.left]) tank.dx = -tankSpeed;
+      if (keysPressed[tank.keys.right]) tank.dx = tankSpeed;
+      if (keysPressed[tank.keys.up]) tank.dy = -tankSpeed;
+      if (keysPressed[tank.keys.down]) tank.dy = tankSpeed;
+      tank.x += tank.dx;
+      tank.y += tank.dy;
+
+      if (keysPressed[tank.keys.shoot]) {
+        if (!tank.shootCooldown) {
+          tank.bullets.push({ x: tank.x + tankSize / 2, y: tank.y + tankSize / 2, dx: tank.dx * bulletSpeed || 0, dy: tank.dy * bulletSpeed || 0 });
+          tank.shootCooldown = 20;
+        }
+      }
+
+      if (tank.shootCooldown) tank.shootCooldown--;
+
+      tank.bullets.forEach(b => {
+        b.x += b.dx;
+        b.y += b.dy;
+      });
+
+      tank.bullets = tank.bullets.filter(b => b.x >= 0 && b.y >= 0 && b.x <= canvas.width && b.y <= canvas.height);
+    }
+
+    function drawTank(tank) {
+      ctx.fillStyle = tank.color;
+      ctx.fillRect(tank.x, tank.y, tankSize, tankSize);
+      tank.bullets.forEach(b => {
+        ctx.fillStyle = "white";
+        ctx.fillRect(b.x, b.y, bulletSize, bulletSize);
+      });
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      updateTank(tank1);
+      updateTank(tank2);
+      drawTank(tank1);
+      drawTank(tank2);
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
