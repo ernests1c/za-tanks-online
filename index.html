@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ZA Tanks Online</title>
+  <title>AZ Tanks Online</title>
   <style>
     body { margin: 0; overflow: hidden; background: #222; }
     canvas { display: block; background: #333; }
@@ -20,40 +20,82 @@
     const bulletSize = 5;
     const tankSpeed = 3;
     const bulletSpeed = 7;
+    const respawnTime = 200; // frames
+
+    const walls = [
+      { x: 300, y: 150, width: 200, height: 20 },
+      { x: 500, y: 300, width: 20, height: 200 },
+      { x: 200, y: 400, width: 300, height: 20 },
+      { x: 700, y: 100, width: 20, height: 300 },
+      { x: 100, y: 200, width: 20, height: 200 }
+    ];
 
     const tank1 = {
+      spawnX: 100,
+      spawnY: 100,
       x: 100,
       y: 100,
       color: "lime",
       keys: { left: "a", right: "d", up: "w", down: "s", shoot: " " },
       dx: 0,
       dy: 0,
-      bullets: []
+      bullets: [],
+      alive: true,
+      respawnCounter: 0
     };
 
     const tank2 = {
+      spawnX: canvas.width - 140,
+      spawnY: canvas.height - 140,
       x: canvas.width - 140,
       y: canvas.height - 140,
       color: "red",
       keys: { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", shoot: "/" },
       dx: 0,
       dy: 0,
-      bullets: []
+      bullets: [],
+      alive: true,
+      respawnCounter: 0
     };
 
     const keysPressed = {};
     window.addEventListener("keydown", (e) => keysPressed[e.key] = true);
     window.addEventListener("keyup", (e) => keysPressed[e.key] = false);
 
-    function updateTank(tank) {
+    function rectsCollide(a, b) {
+      return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function respawnTank(tank) {
+      tank.x = tank.spawnX;
+      tank.y = tank.spawnY;
+      tank.bullets = [];
+      tank.alive = true;
+    }
+
+    function updateTank(tank, opponent) {
+      if (!tank.alive) {
+        tank.respawnCounter--;
+        if (tank.respawnCounter <= 0) respawnTank(tank);
+        return;
+      }
+
       tank.dx = 0;
       tank.dy = 0;
       if (keysPressed[tank.keys.left]) tank.dx = -tankSpeed;
       if (keysPressed[tank.keys.right]) tank.dx = tankSpeed;
       if (keysPressed[tank.keys.up]) tank.dy = -tankSpeed;
       if (keysPressed[tank.keys.down]) tank.dy = tankSpeed;
-      tank.x += tank.dx;
-      tank.y += tank.dy;
+
+      let newX = tank.x + tank.dx;
+      let newY = tank.y + tank.dy;
+
+      const futureRect = { x: newX, y: newY, width: tankSize, height: tankSize };
+      const collidesWall = walls.some(w => rectsCollide(futureRect, w));
+      if (!collidesWall) {
+        tank.x = newX;
+        tank.y = newY;
+      }
 
       if (keysPressed[tank.keys.shoot]) {
         if (!tank.shootCooldown) {
@@ -61,7 +103,6 @@
           tank.shootCooldown = 20;
         }
       }
-
       if (tank.shootCooldown) tank.shootCooldown--;
 
       tank.bullets.forEach(b => {
@@ -69,10 +110,22 @@
         b.y += b.dy;
       });
 
-      tank.bullets = tank.bullets.filter(b => b.x >= 0 && b.y >= 0 && b.x <= canvas.width && b.y <= canvas.height);
+      tank.bullets = tank.bullets.filter(b => {
+        const bulletRect = { x: b.x, y: b.y, width: bulletSize, height: bulletSize };
+        const hitWall = walls.some(w => rectsCollide(bulletRect, w));
+        const hitOpponent = opponent.alive && rectsCollide(bulletRect, { x: opponent.x, y: opponent.y, width: tankSize, height: tankSize });
+
+        if (hitOpponent) {
+          opponent.alive = false;
+          opponent.respawnCounter = respawnTime;
+        }
+
+        return !hitWall && b.x >= 0 && b.y >= 0 && b.x <= canvas.width && b.y <= canvas.height && !hitOpponent;
+      });
     }
 
     function drawTank(tank) {
+      if (!tank.alive) return;
       ctx.fillStyle = tank.color;
       ctx.fillRect(tank.x, tank.y, tankSize, tankSize);
       tank.bullets.forEach(b => {
@@ -81,10 +134,18 @@
       });
     }
 
+    function drawWalls() {
+      ctx.fillStyle = "#666";
+      walls.forEach(w => {
+        ctx.fillRect(w.x, w.y, w.width, w.height);
+      });
+    }
+
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      updateTank(tank1);
-      updateTank(tank2);
+      drawWalls();
+      updateTank(tank1, tank2);
+      updateTank(tank2, tank1);
       drawTank(tank1);
       drawTank(tank2);
       requestAnimationFrame(gameLoop);
