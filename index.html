@@ -23,11 +23,21 @@
     const respawnTime = 200; // frames
 
     const walls = [
-      { x: 300, y: 150, width: 200, height: 20 },
-      { x: 500, y: 300, width: 20, height: 200 },
-      { x: 200, y: 400, width: 300, height: 20 },
-      { x: 700, y: 100, width: 20, height: 300 },
-      { x: 100, y: 200, width: 20, height: 200 }
+      // Outer boundaries
+      { x: 0, y: 0, width: canvas.width, height: 20 },
+      { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+      { x: 0, y: 0, width: 20, height: canvas.height },
+      { x: canvas.width - 20, y: 0, width: 20, height: canvas.height },
+
+      // Maze walls
+      { x: 100, y: 100, width: 20, height: 200 },
+      { x: 120, y: 100, width: 200, height: 20 },
+      { x: 300, y: 100, width: 20, height: 200 },
+      { x: 120, y: 280, width: 200, height: 20 },
+      { x: 500, y: 200, width: 20, height: 300 },
+      { x: 400, y: 400, width: 200, height: 20 },
+      { x: 600, y: 100, width: 20, height: 200 },
+      { x: 200, y: 500, width: 400, height: 20 }
     ];
 
     const tank1 = {
@@ -41,7 +51,8 @@
       dy: 0,
       bullets: [],
       alive: true,
-      respawnCounter: 0
+      respawnCounter: 0,
+      kills: 0
     };
 
     const tank2 = {
@@ -55,7 +66,8 @@
       dy: 0,
       bullets: [],
       alive: true,
-      respawnCounter: 0
+      respawnCounter: 0,
+      kills: 0
     };
 
     const keysPressed = {};
@@ -118,6 +130,7 @@
         if (hitOpponent) {
           opponent.alive = false;
           opponent.respawnCounter = respawnTime;
+          tank.kills++;
         }
 
         return !hitWall && b.x >= 0 && b.y >= 0 && b.x <= canvas.width && b.y <= canvas.height && !hitOpponent;
@@ -135,10 +148,19 @@
     }
 
     function drawWalls() {
-      ctx.fillStyle = "#666";
+      ctx.fillStyle = "white";
       walls.forEach(w => {
         ctx.fillRect(w.x, w.y, w.width, w.height);
       });
+    }
+
+    function drawHUD() {
+      ctx.fillStyle = "lime";
+      ctx.font = "20px Arial";
+      ctx.fillText(`Green: ${tank1.kills} kills`, 20, 30);
+
+      ctx.fillStyle = "red";
+      ctx.fillText(`Red: ${tank2.kills} kills`, canvas.width - 180, 30);
     }
 
     function gameLoop() {
@@ -148,6 +170,7 @@
       updateTank(tank2, tank1);
       drawTank(tank1);
       drawTank(tank2);
+      drawHUD();
       requestAnimationFrame(gameLoop);
     }
 
