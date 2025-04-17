@@ -23,28 +23,36 @@
     const respawnTime = 200; // frames
 
     const walls = [
-      // Outer boundaries
-      { x: 0, y: 0, width: canvas.width, height: 20 },
-      { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
-      { x: 0, y: 0, width: 20, height: canvas.height },
-      { x: canvas.width - 20, y: 0, width: 20, height: canvas.height },
+      // Outer boundaries with gaps
+      { x: 0, y: 0, width: canvas.width / 3 - 40, height: 20 },
+      { x: canvas.width / 3 + 40, y: 0, width: canvas.width * 2 / 3 - 80, height: 20 },
+      { x: 0, y: canvas.height - 20, width: canvas.width / 2 - 40, height: 20 },
+      { x: canvas.width / 2 + 40, y: canvas.height - 20, width: canvas.width / 2 - 40, height: 20 },
+      { x: 0, y: 0, width: 20, height: canvas.height / 2 - 40 },
+      { x: 0, y: canvas.height / 2 + 40, width: 20, height: canvas.height / 2 - 40 },
+      { x: canvas.width - 20, y: 0, width: 20, height: canvas.height / 3 - 40 },
+      { x: canvas.width - 20, y: canvas.height / 3 + 40, width: 20, height: canvas.height * 2 / 3 - 40 },
 
-      // Maze walls
-      { x: 100, y: 100, width: 20, height: 200 },
-      { x: 120, y: 100, width: 200, height: 20 },
-      { x: 300, y: 100, width: 20, height: 200 },
-      { x: 120, y: 280, width: 200, height: 20 },
-      { x: 500, y: 200, width: 20, height: 300 },
-      { x: 400, y: 400, width: 200, height: 20 },
-      { x: 600, y: 100, width: 20, height: 200 },
-      { x: 200, y: 500, width: 400, height: 20 }
+      // Maze-style internal walls with gaps for paths
+      { x: 100, y: 160, width: 20, height: 160 },
+      { x: 120, y: 160, width: 200, height: 20 },
+      { x: 300, y: 180, width: 20, height: 160 },
+      { x: 120, y: 320, width: 200, height: 20 },
+      { x: 500, y: 200, width: 20, height: 200 },
+      { x: 400, y: 380, width: 200, height: 20 },
+      { x: 600, y: 100, width: 20, height: 180 },
+      { x: 200, y: 500, width: 400, height: 20 },
+      { x: 700, y: 300, width: 20, height: 200 },
+      { x: 720, y: 300, width: 200, height: 20 },
+      { x: 920, y: 300, width: 20, height: 200 },
+      { x: 720, y: 480, width: 200, height: 20 }
     ];
 
     const tank1 = {
-      spawnX: 100,
-      spawnY: 100,
-      x: 100,
-      y: 100,
+      spawnX: 50,
+      spawnY: 50,
+      x: 50,
+      y: 50,
       color: "lime",
       keys: { left: "a", right: "d", up: "w", down: "s", shoot: " " },
       dx: 0,
@@ -56,10 +64,10 @@
     };
 
     const tank2 = {
-      spawnX: canvas.width - 140,
-      spawnY: canvas.height - 140,
-      x: canvas.width - 140,
-      y: canvas.height - 140,
+      spawnX: canvas.width - 100,
+      spawnY: canvas.height - 100,
+      x: canvas.width - 100,
+      y: canvas.height - 100,
       color: "red",
       keys: { left: "ArrowLeft", right: "ArrowRight", up: "ArrowUp", down: "ArrowDown", shoot: "/" },
       dx: 0,
