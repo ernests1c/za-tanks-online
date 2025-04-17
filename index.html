@@ -22,29 +22,30 @@
     const bulletSpeed = 7;
     const respawnTime = 200; // frames
 
-    // Walls: outer boundary with gaps and internal maze
-    const holeSize = 120;
+    // Walls: full outer boundary and dense internal maze
     const walls = [
-      // Top boundary with center gap
-      { x: 0, y: 0, width: (canvas.width - holeSize) / 2, height: 20 },
-      { x: (canvas.width + holeSize) / 2, y: 0, width: (canvas.width - holeSize) / 2, height: 20 },
-      // Bottom boundary with center gap
-      { x: 0, y: canvas.height - 20, width: (canvas.width - holeSize) / 2, height: 20 },
-      { x: (canvas.width + holeSize) / 2, y: canvas.height - 20, width: (canvas.width - holeSize) / 2, height: 20 },
-      // Left boundary with center gap
-      { x: 0, y: 0, width: 20, height: (canvas.height - holeSize) / 2 },
-      { x: 0, y: (canvas.height + holeSize) / 2, width: 20, height: (canvas.height - holeSize) / 2 },
-      // Right boundary with center gap
-      { x: canvas.width - 20, y: 0, width: 20, height: (canvas.height - holeSize) / 2 },
-      { x: canvas.width - 20, y: (canvas.height + holeSize) / 2, width: 20, height: (canvas.height - holeSize) / 2 },
-
-      // Internal maze walls
-      { x: canvas.width / 2 - 10, y: 20, width: 20, height: canvas.height / 2 - 40 },
-      { x: canvas.width / 2 - 10, y: canvas.height / 2 + 20, width: 20, height: canvas.height / 2 - 40 },
-      { x: 100, y: canvas.height / 2 - 10, width: canvas.width / 2 - 200, height: 20 },
-      { x: canvas.width / 2 + 100, y: canvas.height / 2 - 10, width: canvas.width / 2 - 200, height: 20 }
+      // Outer boundary
+      { x: 0, y: 0, width: canvas.width, height: 20 },
+      { x: 0, y: canvas.height - 20, width: canvas.width, height: 20 },
+      { x: 0, y: 0, width: 20, height: canvas.height },
+      { x: canvas.width - 20, y: 0, width: 20, height: canvas.height },
+      // Internal vertical walls
+      { x: 150, y: 20, width: 20, height: canvas.height - 40 },
+      { x: 300, y: 20, width: 20, height: canvas.height - 40 },
+      { x: 450, y: 20, width: 20, height: canvas.height - 40 },
+      { x: 600, y: 20, width: 20, height: canvas.height - 40 },
+      { x: 750, y: 20, width: 20, height: canvas.height - 40 },
+      { x: 900, y: 20, width: 20, height: canvas.height - 40 },
+      // Internal horizontal walls
+      { x: 20, y: 150, width: canvas.width - 40, height: 20 },
+      { x: 20, y: 300, width: canvas.width - 40, height: 20 },
+      { x: 20, y: 450, width: canvas.width - 40, height: 20 },
+      { x: 20, y: 600, width: canvas.width - 40, height: 20 },
+      { x: 20, y: 750, width: canvas.width - 40, height: 20 },
+      { x: 20, y: 900, width: canvas.width - 40, height: 20 }
     ];
 
+    // Tank definitions
     const tank1 = {
       spawnX: 50,
       spawnY: 50,
@@ -60,7 +61,6 @@
       respawnCounter: 0,
       kills: 0
     };
-
     const tank2 = {
       spawnX: canvas.width - 100,
       spawnY: canvas.height - 100,
@@ -78,8 +78,8 @@
     };
 
     const keysPressed = {};
-    window.addEventListener("keydown", (e) => keysPressed[e.key] = true);
-    window.addEventListener("keyup", (e) => keysPressed[e.key] = false);
+    window.addEventListener("keydown", e => keysPressed[e.key] = true);
+    window.addEventListener("keyup", e => keysPressed[e.key] = false);
 
     function rectsCollide(a, b) {
       return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
@@ -98,59 +98,40 @@
         if (tank.respawnCounter <= 0) respawnTank(tank);
         return;
       }
-
       // Movement
-      tank.dx = 0;
-      tank.dy = 0;
+      tank.dx = 0; tank.dy = 0;
       if (keysPressed[tank.keys.left]) tank.dx = -tankSpeed;
       if (keysPressed[tank.keys.right]) tank.dx = tankSpeed;
       if (keysPressed[tank.keys.up]) tank.dy = -tankSpeed;
       if (keysPressed[tank.keys.down]) tank.dy = tankSpeed;
-
-      // Update last direction if moved
+      // Update last direction
       if (tank.dx !== 0 || tank.dy !== 0) {
         const norm = Math.hypot(tank.dx, tank.dy);
         tank.lastDir.dx = tank.dx / norm;
         tank.lastDir.dy = tank.dy / norm;
       }
-
-      // Collision with walls
-      const newX = tank.x + tank.dx;
-      const newY = tank.y + tank.dy;
-      const futureRect = { x: newX, y: newY, width: tankSize, height: tankSize };
-      if (!walls.some(w => rectsCollide(futureRect, w))) {
-        tank.x = newX;
-        tank.y = newY;
+      // Wall collision
+      const nx = tank.x + tank.dx, ny = tank.y + tank.dy;
+      const future = { x: nx, y: ny, width: tankSize, height: tankSize };
+      if (!walls.some(w => rectsCollide(future, w))) {
+        tank.x = nx; tank.y = ny;
       }
-
       // Shooting
-      if (keysPressed[tank.keys.shoot]) {
-        if (!tank.shootCooldown) {
-          const dirX = tank.dx !== 0 || tank.dy !== 0 ? tank.dx * bulletSpeed : tank.lastDir.dx * bulletSpeed;
-          const dirY = tank.dx !== 0 || tank.dy !== 0 ? tank.dy * bulletSpeed : tank.lastDir.dy * bulletSpeed;
-          tank.bullets.push({ x: tank.x + tankSize / 2, y: tank.y + tankSize / 2, dx: dirX, dy: dirY });
-          tank.shootCooldown = 20;
-        }
+      if (keysPressed[tank.keys.shoot] && !tank.shootCooldown) {
+        const dirX = tank.dx !== 0 || tank.dy !== 0 ? tank.dx * bulletSpeed : tank.lastDir.dx * bulletSpeed;
+        const dirY = tank.dx !== 0 || tank.dy !== 0 ? tank.dy * bulletSpeed : tank.lastDir.dy * bulletSpeed;
+        tank.bullets.push({ x: tank.x + tankSize/2, y: tank.y + tankSize/2, dx: dirX, dy: dirY });
+        tank.shootCooldown = 20;
       }
       if (tank.shootCooldown) tank.shootCooldown--;
-
-      // Update bullets
-      tank.bullets.forEach(b => {
-        b.x += b.dx;
-        b.y += b.dy;
-      });
-
-      // Bullet collisions
+      // Bullets update
+      tank.bullets.forEach(b => { b.x += b.dx; b.y += b.dy; });
       tank.bullets = tank.bullets.filter(b => {
-        const bulletRect = { x: b.x, y: b.y, width: bulletSize, height: bulletSize };
-        const hitWall = walls.some(w => rectsCollide(bulletRect, w));
-        const hitOpponent = opponent.alive && rectsCollide(bulletRect, { x: opponent.x, y: opponent.y, width: tankSize, height: tankSize });
-        if (hitOpponent) {
-          opponent.alive = false;
-          opponent.respawnCounter = respawnTime;
-          tank.kills++;
-        }
-        return !hitWall && b.x >= 0 && b.y >= 0 && b.x <= canvas.width && b.y <= canvas.height && !hitOpponent;
+        const rect = { x: b.x, y: b.y, width: bulletSize, height: bulletSize };
+        const hitWall = walls.some(w => rectsCollide(rect, w));
+        const hitOpp = opponent.alive && rectsCollide(rect, { x: opponent.x, y: opponent.y, width: tankSize, height: tankSize });
+        if (hitOpp) { opponent.alive = false; opponent.respawnCounter = respawnTime; tank.kills++; }
+        return !hitWall && b.x>=0 && b.y>=0 && b.x<=canvas.width && b.y<=canvas.height && !hitOpp;
       });
     }
 
